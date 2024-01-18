@@ -1,68 +1,26 @@
-// Create web server
+// create web server and handle requests
+// run with: node comment.js
+// access with: http://localhost:3000
 
-var express = require("express");
-var app = express();
-var port = 3000;
-var bodyParser = require('body-parser');
-var fs = require("fs");
+var http = require('http');
+var fs = require('fs');
 
-// Use body parser
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-// Read data from file
-var data = fs.readFileSync(__dirname + "/data.json", "utf8");
-var comments = JSON.parse(data);
-
-// Create web server
-app.listen(port, function() {
-    console.log("Server is running on port " + port);
+var server = http.createServer(function(req, res) {
+    console.log('request was made: ' + req.url);
+    if(req.url === '/home' || req.url === '/') {
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        fs.createReadStream(__dirname + '/index.html').pipe(res);
+    } else if(req.url === '/contact') {
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        fs.createReadStream(__dirname + '/contact.html').pipe(res);
+    } else if(req.url === '/api/ninjas') {
+        var ninjas = [{name: 'ryu', age: 29}, {name: 'yoshi', age: 32}];
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify(ninjas));
+    } else {
+        res.writeHead(404, {'Content-Type': 'text/html'});
+        fs.createReadStream(__dirname + '/404.html').pipe(res);
+    }
 });
 
-// Set view engine
-app.set("view engine", "ejs");
-app.set("views", "./views");
-
-// Set static folder
-app.use(express.static("public"));
-
-// Home page
-app.get("/", function(req, res) {
-    res.render("home");
-});
-
-// Show all comments
-app.get("/comments", function(req, res) {
-    res.render("comments", {comments: comments});
-});
-
-// Add new comment
-app.post("/comments", function(req, res) {
-    var newComment = {
-        name: req.body.name,
-        content: req.body.content
-    };
-    comments.push(newComment);
-    res.redirect("/comments");
-});
-
-// Delete comment
-app.get("/comments/delete/:id", function(req, res) {
-    var id = req.params.id;
-    comments.splice(id, 1);
-    res.redirect("/comments");
-});
-
-// Edit comment
-app.get("/comments/edit/:id", function(req, res) {
-    var id = req.params.id;
-    res.render("edit", {comment: comments[id]});
-});
-
-// Update comment
-app.post("/comments/edit/:id", function(req, res) {
-    var id = req.params.id;
-    comments[id].name = req.body.name;
-    comments[id].content = req.body.content;
-    res.redirect("/comments");
-});
+server.listen(3000,)
